@@ -10,7 +10,6 @@ import android.graphics.Rect;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 
 class Result {
@@ -23,7 +22,7 @@ class Result {
         this.score = output;
         this.rect = rect;
     }
-};
+}
 
 public class PrePostProcessor {
     // for yolov5 model, no need to apply MEAN and STD
@@ -35,10 +34,10 @@ public class PrePostProcessor {
     static int mInputHeight = 640;
 
     // model output is of size 25200*(num_of_class+5)
-    private static int mOutputRow = 25200; // as decided by the YOLOv5 model for input image of size 640*640
-    private static int mOutputColumn = 85; // left, top, right, bottom, score and 80 class probability
-    private static float mThreshold = 0.30f; // score above which a detection is generated
-    private static int mNmsLimit = 15;
+    private static final int mOutputRow = 25200; // as decided by the YOLOv5 model for input image of size 640*640
+    private static final int mOutputColumn = 85; // left, top, right, bottom, score and 80 class probability
+    private static final float mThreshold = 0.30f; // score above which a detection is generated
+    private static final int mNmsLimit = 15;
 
     static String[] mClasses;
 
@@ -51,16 +50,10 @@ public class PrePostProcessor {
      - limit: the maximum number of boxes that will be selected
      - threshold: used to decide whether boxes overlap too much
      */
-    static ArrayList<Result> nonMaxSuppression(ArrayList<Result> boxes, int limit, float threshold) {
+    static ArrayList<Result> nonMaxSuppression(ArrayList<Result> boxes) {
 
         // Do an argsort on the confidence scores, from high to low.
-        Collections.sort(boxes,
-                new Comparator<Result>() {
-                    @Override
-                    public int compare(Result o1, Result o2) {
-                        return o1.score.compareTo(o2.score);
-                    }
-                });
+        boxes.sort(Comparator.comparing(o -> o.score));
 
         ArrayList<Result> selected = new ArrayList<>();
         boolean[] active = new boolean[boxes.size()];
@@ -77,12 +70,12 @@ public class PrePostProcessor {
             if (active[i]) {
                 Result boxA = boxes.get(i);
                 selected.add(boxA);
-                if (selected.size() >= limit) break;
+                if (selected.size() >= PrePostProcessor.mNmsLimit) break;
 
                 for (int j=i+1; j<boxes.size(); j++) {
                     if (active[j]) {
                         Result boxB = boxes.get(j);
-                        if (IOU(boxA.rect, boxB.rect) > threshold) {
+                        if (IOU(boxA.rect, boxB.rect) > PrePostProcessor.mThreshold) {
                             active[j] = false;
                             numActive -= 1;
                             if (numActive <= 0) {
@@ -144,6 +137,6 @@ public class PrePostProcessor {
                 results.add(result);
             }
         }
-        return nonMaxSuppression(results, mNmsLimit, mThreshold);
+        return nonMaxSuppression(results);
     }
 }
