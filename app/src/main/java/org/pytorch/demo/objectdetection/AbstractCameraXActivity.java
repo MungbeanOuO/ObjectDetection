@@ -82,6 +82,13 @@ public abstract class AbstractCameraXActivity<R> extends BaseModuleActivity {
                 .setCallbackHandler(mBackgroundHandler)
                 .setImageReaderMode(ImageAnalysis.ImageReaderMode.ACQUIRE_LATEST_IMAGE)
                 .build();
+        final ImageAnalysis imageAnalysis = getImageAnalysis(imageAnalysisConfig);
+
+        CameraX.bindToLifecycle(this, preview, imageAnalysis);
+    }
+
+    @NonNull
+    private ImageAnalysis getImageAnalysis(ImageAnalysisConfig imageAnalysisConfig) {
         final ImageAnalysis imageAnalysis = new ImageAnalysis(imageAnalysisConfig);
         imageAnalysis.setAnalyzer((image, rotationDegrees) -> {
             if (SystemClock.elapsedRealtime() - mLastAnalysisResultTime < 500) {
@@ -94,8 +101,7 @@ public abstract class AbstractCameraXActivity<R> extends BaseModuleActivity {
                 runOnUiThread(() -> applyToUiAnalyzeImageResult(result));
             }
         });
-
-        CameraX.bindToLifecycle(this, preview, imageAnalysis);
+        return imageAnalysis;
     }
 
     @WorkerThread
